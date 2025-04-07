@@ -1,25 +1,29 @@
-const client = require('./database'); 
+const pool = require('./database');
+
+// Функция для получения всех категорий
 
 const getAllCategories = async () => {
     try {
-        const res = await client.query('SELECT * FROM categories');
-        return res.rows;
-    } catch (err) {
-        console.error('Ошибка при выполнении запроса к категориям:', err);
-        throw err;
+        const res = await pool.query('SELECT * FROM categories');
+        return res.rows;  // Возвращаем массив строк
+    } catch (error) {
+        console.error('Ошибка при получении категорий:', error);
+        throw error;  // Пробрасываем ошибку дальше
     }
 };
 
+// Функция для получения всех элементов меню
 const getAllMenuItems = async () => {
     try {
-        const res = await client.query('SELECT * FROM menu_items');
-        return res.rows;
-    } catch (err) {
-        console.error('Ошибка при выполнении запроса к блюдам:', err);
-        throw err;
+        const res = await pool.query('SELECT * FROM menu_items');
+        return res.rows;  // Возвращаем массив строк
+    } catch (error) {
+        console.error('Ошибка при получении элементов меню:', error);
+        throw error;  // Пробрасываем ошибку дальше
     }
 };
 
+// Экспортируем функции для использования в других файлах
 module.exports = {
     getAllCategories,
     getAllMenuItems,

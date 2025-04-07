@@ -1,7 +1,8 @@
-const { Client } = require('pg');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const client = new Client({
+// Создание пула подключений
+const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
@@ -9,9 +10,10 @@ const client = new Client({
     port: process.env.DB_PORT,
 });
 
-client.connect()
+// Подключение к базе данных
+pool.connect()
     .then(() => console.log('Подключение к базе данных успешно установлено'))
     .catch(err => console.error('Ошибка подключения к базе данных:', err));
 
-module.exports = client;
-
+// Экспорт пула для использования в других файлах
+module.exports = pool;

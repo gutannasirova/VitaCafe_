@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { View, Text, FlatList, StyleSheet, Image } from "react-native";
 import { getAllCategories, getAllMenuItems } from "../queries";
+
+const imageMap = {
+  'food_image2.png': require('./assets/food_image2.png'),
+  // Добавьте другие изображения по мере необходимости
+};
 
 const MenuScreen = () => {
   const [categories, setCategories] = useState([]);
@@ -34,6 +39,7 @@ const MenuScreen = () => {
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <View style={styles.menuItemContainer}>
+                  <Image source={imageMap[item.image_url]} style={styles.menuItemImage} />
                   <Text style={styles.menuItemTitle}>{item.title}</Text>
                   <Text style={styles.menuItemPrice}>{item.price} руб.</Text>
                 </View>
@@ -77,6 +83,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
+  },
+  menuItemImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   menuItemTitle: {
     fontSize: 16,

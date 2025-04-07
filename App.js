@@ -31,8 +31,12 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
               onPress={() => navigation.navigate(route.name)}
               style={[styles.tabButton, isFocused ? styles.activeTab : null]}
             >
-              <Feather name={icons[route.name]} size={24} color={isFocused ? "#C4F39C" : "black"} />
-              <Text style={[styles.tabText, isFocused && { fontWeight: "bold", color: "black"}]}>
+              <Feather 
+                name={icons[route.name]} 
+                size={24} 
+                color={isFocused ? "#C4F39C" : "black"} 
+              />
+              <Text style={[styles.tabText, isFocused && { fontWeight: "bold", color: "black" }]}>
                 {route.name}
               </Text>
             </TouchableOpacity>
@@ -91,7 +95,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     width: "90%",
-    position: "relative",
   },
   tabButton: {
     alignItems: "center",
