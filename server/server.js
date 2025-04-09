@@ -1,63 +1,60 @@
 const express = require('express');
-const menuModel = require('./menu_model');
 const cors = require('cors');
+const menuModel = require('./queries'); // Импортируем функции из queries.js
 
 const app = express();
-const port = 3000; // сервер теперь будет слушать на порту 5000
+const port = 3000;
 
-// Используем CORS для разрешения запросов с клиента
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({
+  origin: 'http://localhost:8081' // Указываем адрес вашего клиента
+}));
+
 app.use(express.json());
 
 // Получение всех категорий
-app.get('/categories', (req, res) => {
-  menuModel.getCategories()
-    .then(response => {
-      res.status(200).send(response);
-    })
-    .catch(error => {
-      console.error("Error fetching categories:", error);
-      res.status(500).send({ error: "Ошибка при получении категорий" });
-    });
+app.get('/categories', async (req, res) => {
+  try {
+    const categories = await menuModel.getCategories();
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ error: "Ошибка при получении категорий" });
+  }
 });
 
 // Получение всех элементов меню
-app.get('/menu_items', (req, res) => {
-  menuModel.getMenuItems()
-    .then(response => {
-      res.status(200).send(response);
-    })
-    .catch(error => {
-      console.error("Error fetching menu items:", error);
-      res.status(500).send({ error: "Ошибка при получении элементов меню" });
-    });
+app.get('/menu_items', async (req, res) => {
+  try {
+    const menuItems = await menuModel.getMenuItems();
+    res.status(200).json(menuItems);
+  } catch (error) {
+    console.error("Error fetching menu items:", error);
+    res.status(500).json({ error: "Ошибка при получении элементов меню" });
+  }
 });
 
 // Создание нового элемента меню
-app.post('/menu_items', (req, res) => {
-  menuModel.createMenuItem(req.body)
-    .then(response => {
-      res.status(201).send(response);
-    })
-    .catch(error => {
-      console.error("Error creating menu item:", error);
-      res.status(500).send({ error: "Ошибка при создании элемента меню" });
-    });
+app.post('/menu_items', async (req, res) => {
+  try {
+    const newItem = await menuModel.createMenuItem(req.body);
+    res.status(201).json(newItem);
+  } catch (error) {
+    console.error("Error creating menu item:", error);
+    res.status(500).json({ error: "Ошибка при создании элемента меню" });
+  }
 });
 
 // Удаление элемента меню по ID
-app.delete('/menu_items/:id', (req, res) => {
-  menuModel.deleteMenuItem(req.params.id)
-    .then(response => {
-      res.status(200).send(response);
-    })
-    .catch(error => {
-      console.error("Error deleting menu item:", error);
-      res.status(500).send({ error: "Ошибка при удалении элемента меню" });
-    });
+app.delete('/menu_items/:id', async (req, res) => {
+  try {
+    const result = await menuModel.deleteMenuItem(req.params.id);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error deleting menu item:", error);
+    res.status(500).json({ error: "Ошибка при удалении элемента меню" });
+  }
 });
 
-// Запуск сервера
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Сервер запущен на http://localhost:${port}`);
 });

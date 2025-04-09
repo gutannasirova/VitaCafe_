@@ -15,17 +15,18 @@ import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 
 export const getAllCategories = async () => {
-  const res = await fetch("http://localhost:3000/categories");
+  const res = await fetch(`${API_BASE_URL}/categories`); // Добавляем / перед menu_items
   const data = await res.json();
   return data;
 };
 
 export const getAllMenuItems = async () => {
-  const res = await fetch("http://localhost:3000/menu_items");
+  const res = await fetch(`${API_BASE_URL}/menu_items`); // Добавляем / перед menu_items
   const data = await res.json();
   return data;
 };
 
+const API_BASE_URL = 'http://localhost:3000'; // или ваш реальный URL сервера
 
 const imageMap = {
   "food_image2.png": require("./assets/food_image2.png"),
@@ -41,6 +42,7 @@ const MenuScreen = () => {
   const [priceRange, setPriceRange] = useState([300, 3000]);
   const [searchQuery, setSearchQuery] = useState("");
   const modalAnimation = useRef(new Animated.Value(0)).current;
+  
 
   useEffect(() => {
     const fetchData = async () => {

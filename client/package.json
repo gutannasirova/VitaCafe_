@@ -1,7 +1,6 @@
 {
   "name": "vitacafereactprogect",
   "version": "1.0.0",
-  "main": "client/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "react-scripts start"
@@ -11,6 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "proxy": "http://localhost:3000",
+    
     "@expo/metro-runtime": "^4.0.1",
     "@react-native-community/datetimepicker": "^8.2.0",
     "@react-native-community/slider": "^4.5.5",
@@ -32,6 +33,9 @@
     "react-native-screens": "~4.4.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^3.0.1"
+  },
+  "devDependencies": {
+    "babel-jest": "^29.7.0"
   }
 }
