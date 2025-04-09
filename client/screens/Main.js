@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, ImageBackground, TouchableOpacity, StyleSheet } from 'react-native';
 
-const App = () => {
+const WelcomeScreen = ({ navigation }) => {
   return (
     <ImageBackground source={require('./assets/back.png')} style={styles.background}>
       <View style={styles.container}>
         <Text style={styles.title}>{`Твое здоровье\nв каждой\nдоставке!`}</Text>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('LoginScreen')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('LoginScreen')}
+        >
           <Text style={styles.buttonText}>Войти</Text>
         </TouchableOpacity>
         <Text style={styles.registerText}>Регистрация</Text>
@@ -57,4 +60,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default WelcomeScreen;

@@ -64,7 +64,7 @@ const spinValue = useRef(new Animated.Value(0)).current;
 
 const styles = StyleSheet.create({
   background: {
-    width: 311 ,
+    width: 412 ,
     height: 180 ,
     resizeMode: "cover",
     justifyContent: "center",

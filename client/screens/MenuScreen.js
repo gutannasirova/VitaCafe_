@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -13,28 +13,29 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
+import { useQuery } from "@tanstack/react-query";
 
-export const getAllCategories = async () => {
-  const res = await fetch(`${API_BASE_URL}/categories`); // Добавляем / перед menu_items
-  const data = await res.json();
-  return data;
-};
-
-export const getAllMenuItems = async () => {
-  const res = await fetch(`${API_BASE_URL}/menu_items`); // Добавляем / перед menu_items
-  const data = await res.json();
-  return data;
+const imageMap = {
+  "food1.png": require("./assets/food_image1.png"),
+  "food2.png": require("./assets/food_image2.png"),
 };
 
 const API_BASE_URL = 'http://localhost:3000'; // или ваш реальный URL сервера
 
-const imageMap = {
-  "food_image2.png": require("./assets/food_image2.png"),
+// Функции для получения данных через react-query
+const fetchCategories = async () => {
+  const res = await fetch(`${API_BASE_URL}/categories`);
+  if (!res.ok) throw new Error("Ошибка при загрузке категорий");
+  return res.json();
+};
+
+const fetchMenuItems = async () => {
+  const res = await fetch(`${API_BASE_URL}/menu_items`);
+  if (!res.ok) throw new Error("Ошибка при загрузке элементов меню");
+  return res.json();
 };
 
 const MenuScreen = () => {
-  const [categories, setCategories] = useState([]);
-  const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -42,25 +43,34 @@ const MenuScreen = () => {
   const [priceRange, setPriceRange] = useState([300, 3000]);
   const [searchQuery, setSearchQuery] = useState("");
   const modalAnimation = useRef(new Animated.Value(0)).current;
-  
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const cats = await getAllCategories();
-        const items = await getAllMenuItems();
-        setCategories(cats);
-        setMenuItems(items);
+  // Используем useQuery для получения данных (обновленный формат)
+  const {
+    data: categories = [],
+    isLoading: isCategoriesLoading,
+    error: categoriesError,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
 
-        const defaultCategoryId = cats[0]?.id;
-        setSelectedCategory(defaultCategoryId);
-        setFilteredData(items.filter((item) => item.category_id === defaultCategoryId));
-      } catch (error) {
-        console.error("Ошибка при загрузке данных:", error);
-      }
-    };
-    fetchData();
-  }, []);
+  const {
+    data: menuItems = [],
+    isLoading: isMenuItemsLoading,
+    error: menuItemsError,
+  } = useQuery({
+    queryKey: ["menuItems"],
+    queryFn: fetchMenuItems,
+  });
+
+  // Устанавливаем начальную категорию и фильтруем данные
+  React.useEffect(() => {
+    if (categories.length > 0 && menuItems.length > 0) {
+      const defaultCategoryId = categories[0]?.id;
+      setSelectedCategory(defaultCategoryId);
+      setFilteredData(menuItems.filter((item) => item.category_id === defaultCategoryId));
+    }
+  }, [categories, menuItems]);
 
   const openFilter = () => {
     setIsFilterVisible(true);
@@ -98,7 +108,6 @@ const MenuScreen = () => {
       setFilteredData(menuItems.filter((item) => item.category_id === selectedCategory));
       return;
     }
-
     const found = menuItems.filter(
       (item) =>
         item.title.toLowerCase().includes(query.toLowerCase()) &&
@@ -124,7 +133,6 @@ const MenuScreen = () => {
             <Feather name="search" size={28} color="black" />
           </TouchableOpacity>
         </View>
-
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
@@ -134,19 +142,16 @@ const MenuScreen = () => {
             onChangeText={handleSearch}
           />
         </View>
-
         <View style={styles.categoryContainer}>
           <Text style={styles.categoryTitle}>Категории</Text>
           <TouchableOpacity>
             <Text style={styles.viewAll}>Смотреть все</Text>
           </TouchableOpacity>
         </View>
-
         <View style={styles.filterContainer}>
           <TouchableOpacity style={styles.filterButton} onPress={openFilter}>
             <Feather name="sliders" size={22} color="black" />
           </TouchableOpacity>
-
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
@@ -172,7 +177,6 @@ const MenuScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
-
         <FlatList
           data={filteredData}
           keyExtractor={(item) => item.id.toString()}
@@ -194,7 +198,6 @@ const MenuScreen = () => {
             </View>
           )}
         />
-
         <Modal visible={isFilterVisible} transparent={true} animationType="none" onRequestClose={closeFilter}>
           <View style={styles.modalOverlay}>
             <Animated.View style={[styles.modalContainer, { transform: [{ translateY: modalTranslateY }] }]}>
