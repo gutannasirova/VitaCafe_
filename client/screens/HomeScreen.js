@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, FlatList, ImageBackground, StyleSheet } from "react-native";
+const API_BASE_URL = 'http://localhost:8081';
 
 const foodItems = [
     { id: "1", title: "Салат с бурратой", calories: "120 ккал", price: "380 ₽", image: require("./assets/food_image2.png") },

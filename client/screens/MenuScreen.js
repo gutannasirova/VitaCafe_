@@ -20,7 +20,7 @@ const imageMap = {
   "food2.png": require("./assets/food_image2.png"),
 };
 
-const API_BASE_URL = 'http://localhost:3000'; // или ваш реальный URL сервера
+const API_BASE_URL = 'http://192.168.1.42:3000';
 
 // Функции для получения данных через react-query
 const fetchCategories = async () => {

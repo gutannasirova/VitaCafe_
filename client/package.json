@@ -16,6 +16,7 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",
     "@react-navigation/stack": "^7.2.8",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "expo": "^52.0.44",
     "express": "^4.21.2",

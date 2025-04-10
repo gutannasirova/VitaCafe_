@@ -1,120 +1,123 @@
-import React, { useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, Image, Animated, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+const API_BASE_URL = 'http://localhost:8081';
 
-export default function LoginScreen() {
-const spinValue = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 4000, // Вращение на 180 градусов за 5 секунд
-          useNativeDriver: true,
-        }),
-        Animated.timing(spinValue, {
-          toValue: 0,
-          duration: 4000, // Возвращение обратно за 5 секунд
-          useNativeDriver: true,
-        })
-      ])
-    ).start();
-  }, []);
+export default function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState(""); // Поле для ввода email
+  const [password, setPassword] = useState(""); // Поле для ввода пароля
 
-  // Интерполяция для вращения (только 180 градусов вперед-назад)
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "-50deg"],
-  });
+  // Функция для обработки входа
+  const handleLogin = async () => {
+    try {
+      // Проверка на пустые поля
+      if (!email.trim() || !password.trim()) {
+        Alert.alert("Ошибка", "Пожалуйста, заполните все поля");
+        return;
+      }
 
+      // Отправляем запрос на сервер
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }), // Передаем email и пароль
+      });
+
+      const data = await response.json();
+
+      // Обработка ответа от сервера
+      if (response.ok) {
+        Alert.alert("Успех", "Вы успешно вошли");
+        navigation.navigate("Home"); // Переход на главную страницу
+      } else {
+        Alert.alert("Ошибка", data.error || "Неправильные данные");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Ошибка", "Не удалось подключиться к серверу");
+    }
+  };
 
   return (
-    <ImageBackground source={require('./assets/Back2.png')} style={styles.background}>
-      {/* Вращающийся листок салата */}
-      <Animated.Image
-        source={require('./assets/Bazelik.png')}
-        style={[styles.Bazelik, { transform: [{ rotate: spin }] }]}
-      />
-      <Animated.Image
-        source={require('./assets/Spinach2.png')}
-        style={[styles.Spinach, { transform: [{ rotate: spin }] }]}
+    <View style={styles.container}>
+      {/* Заголовок */}
+      <Text style={styles.title}>VitaCafe</Text>
+      <Text style={styles.subtitle}>Добро пожаловать</Text>
+
+      {/* Поле для ввода почты */}
+      <TextInput
+        placeholder="Почта"
+        placeholderTextColor="#666"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address" // Клавиатура для email
+        autoCapitalize="none" // Отключение автозаглавных букв
+        style={styles.input}
       />
 
-      <View style={styles.container}>
-        <Text style={styles.title}>VitaCafe</Text>
-        <Text style={styles.subtitle}>Добро пожаловать</Text>
-        
-        <TextInput style={styles.input} placeholder="ФИО" placeholderTextColor="#666" />
-        <TextInput style={styles.input} placeholder="Пароль" placeholderTextColor="#666" secureTextEntry />
-        
-        <TouchableOpacity>
-          <Text style={styles.forgotPassword}>Забыли пароль?</Text>
-        </TouchableOpacity>
+      {/* Поле для ввода пароля */}
+      <TextInput
+        placeholder="Пароль"
+        placeholderTextColor="#666"
+        secureTextEntry // Скрытие вводимого текста
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+      />
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Войти</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity>
-          <Text style={styles.createAccount}>Создать аккаунт</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+      {/* Ссылка "Забыли пароль?" */}
+      <TouchableOpacity>
+        <Text style={styles.forgotPassword}>Забыли пароль?</Text>
+      </TouchableOpacity>
+
+      {/* Кнопка "Войти" */}
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Войти</Text>
+      </TouchableOpacity>
+
+      {/* Кнопка "Создать аккаунт" */}
+      <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+        <Text style={styles.createAccount}>Создать аккаунт</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
+// Стили
 const styles = StyleSheet.create({
-  background: {
-    width: 412 ,
-    height: 180 ,
-    resizeMode: "cover",
+  container: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  Bazelik: {
-    position: "absolute",
-    top: 180,
-    left: 280,
-    width: 50,
-    height: 50,
-  },
-  Spinach: {
-    position: "absolute",
-    top: 570,
-    right: 280,
-    width: 50,
-    height: 50,
-  },
-  container: {
     padding: 20,
-    alignItems: "center",
-    width: "95%",
-    marginTop: 570,
   },
   title: {
     fontSize: 33,
-    fontWeight: 500,
-    marginBottom: 10,
-    fontFamily: "faberge",
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
   },
   subtitle: {
     fontSize: 20,
-    marginBottom: 20,
-    fontFamily: "faberge",
+    marginBottom: 30,
+    color: "#555",
   },
   input: {
-    width: "107%",
+    width: "100%",
     height: 50,
     backgroundColor: "#E6F0DA",
     borderRadius: 20,
-    paddingHorizontal: 20,
-    fontSize: 16,
+    paddingHorizontal: 15,
     marginBottom: 15,
-    fontFamily: "faberge",
+    fontSize: 16,
+    color: "#333",
   },
   forgotPassword: {
     alignSelf: "flex-end",
-    color: "#555",
+    color: "#78B420",
     marginBottom: 20,
+    textDecorationLine: "underline", // Добавляем подчеркивание
   },
   button: {
     backgroundColor: "#78B420",
@@ -127,12 +130,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontSize: 18,
-    fontFamily: "faberge",
+    fontWeight: "bold",
   },
   createAccount: {
     marginTop: 15,
     fontSize: 16,
-    color: "#333",
-    fontFamily: "faberge",
+    color: "#78B420",
+    textDecorationLine: "underline", // Добавляем подчеркивание
   },
 });

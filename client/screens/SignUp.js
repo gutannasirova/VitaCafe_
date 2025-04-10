@@ -1,67 +1,109 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Image, Animated } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 
-const { width } = Dimensions.get('window');
+// Замените на реальный URL вашего сервера
+const API_BASE_URL = 'http://localhost:8081';
 
-export default function RegistrationScreen() {
-  // Логика анимации
-  const spinValue = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 4000, // Вращение на 180 градусов за 4 секунды
-          useNativeDriver: true,
-        }),
-        Animated.timing(spinValue, {
-          toValue: 0,
-          duration: 4000, // Возвращение обратно за 4 секунды
-          useNativeDriver: true,
-        })
-      ])
-    ).start();
-  }, []);
+export default function SignUpScreen({ navigation }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Состояние загрузки
 
-  // Интерполяция для вращения
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "-50deg"],
-  });
+  // Функция для проверки валидности email
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Функция для регистрации пользователя
+  const handleSignUp = async () => {
+    // Проверка ввода данных
+    if (!name.trim()) {
+      Alert.alert("Ошибка", "Введите ФИО");
+      return;
+    }
+    if (!email.trim() || !isValidEmail(email)) {
+      Alert.alert("Ошибка", "Введите корректный email");
+      return;
+    }
+    if (!password.trim() || password.length < 6) {
+      Alert.alert("Ошибка", "Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
+    setIsLoading(true); // Включаем индикатор загрузки
+
+    try {
+      console.log("Отправляем запрос на:", `${API_BASE_URL}/register`);
+      console.log("Данные для регистрации:", { username: name, email, password });
+
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: name, email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Ошибка сервера:", errorData);
+        Alert.alert("Ошибка", errorData.error || "Не удалось зарегистрироваться");
+        return;
+      }
+
+      const data = await response.json();
+      Alert.alert("Успех", "Вы успешно зарегистрировались");
+      navigation.navigate("LoginScreen");
+    } catch (error) {
+      console.error("Ошибка при регистрации:", error);
+      Alert.alert("Ошибка", "Не удалось подключиться к серверу. Проверьте подключение к интернету.");
+    } finally {
+      setIsLoading(false); // Выключаем индикатор загрузки
+    }
+  };
 
   return (
     <View style={styles.container}>
-      {/* Вращающиеся листки салата */}
-      <Animated.Image
-        source={require('./assets/Bazelik.png')}
-        style={[styles.Bazelik, { transform: [{ rotate: spin }] }]}
-      />
-      <Animated.Image
-        source={require('./assets/Spinach2.png')}
-        style={[styles.Spinach, { transform: [{ rotate: spin }] }]}
-      />
-
       <Text style={styles.logo}>VitaCafe</Text>
       <Text style={styles.title}>Регистрация</Text>
 
-      <View style={styles.inputContainer}>
-        <Icon name="user" size={20} color="#333" style={styles.icon} />
-        <TextInput placeholder="ФИО" style={styles.input} placeholderTextColor="#555" />
-      </View>
+      <TextInput
+        placeholder="ФИО"
+        placeholderTextColor="#555"
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+      />
 
-      <View style={styles.inputContainer}>
-        <Icon name="envelope" size={20} color="#333" style={styles.icon} />
-        <TextInput placeholder="Почта" style={styles.input} placeholderTextColor="#555" />
-      </View>
+      <TextInput
+        placeholder="Почта"
+        placeholderTextColor="#555"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+        keyboardType="email-address"
+        autoCapitalize="none" // Отключаем автокапитализацию
+      />
 
-      <View style={styles.inputContainer}>
-        <Icon name="lock" size={24} color="#333" style={styles.icon} />
-        <TextInput placeholder="Пароль" secureTextEntry style={styles.input} placeholderTextColor="#555" />
-      </View>
+      <TextInput
+        placeholder="Пароль"
+        placeholderTextColor="#555"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+        autoCapitalize="none" // Отключаем автокапитализацию
+      />
 
-      <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Войти</Text>
+      {/* Кнопка регистрации */}
+      <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={isLoading}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" /> // Индикатор загрузки
+        ) : (
+          <Text style={styles.buttonText}>Зарегистрироваться</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -69,78 +111,42 @@ export default function RegistrationScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    width: 412,
-    height: 'auto',
-    alignSelf: 'center',
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    marginTop: 50,
-  },
-  backText: {
-    fontSize: 20,
-    color: '#333',
-    fontFamily: 'faberge',
   },
   logo: {
     fontSize: 33,
-    textAlign: 'center',
-    fontWeight: '500',
-    marginTop: 70,
-    fontFamily: 'faberge',
+    fontWeight: "bold",
+    marginBottom: 20,
   },
   title: {
-    fontSize: 20,
-    textAlign: 'center',
+    fontSize: 24,
     marginBottom: 20,
-    padding:10,
-    fontFamily: 'faberge',
-    
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#ecf4e6',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginBottom: 10,
-    height: 50,
-  },
-  icon: {
-    marginRight: 10,
   },
   input: {
-    flex: 1,
+    width: "100%",
+    height: 50,
+    backgroundColor: "#ecf4e6",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    marginBottom: 15,
     fontSize: 16,
-    color: '#333',
-    fontFamily: 'faberge',
+    color: "#333",
   },
   button: {
     backgroundColor: "#78B420",
     paddingVertical: 10,
     paddingHorizontal: 110,
     borderRadius: 20,
-    marginTop: 30,
+    marginTop: 20,
     alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     color: "white",
     fontSize: 18,
-    fontFamily: "faberge",
-  },
-  Bazelik: {
-    position: "absolute",
-    top: "20%", // Центрирование по вертикали
-    right: -32, // Правый край экрана
-    width: 90,
-    height: 90,
-    marginTop: -45, // Смещение вверх на половину высоты для точного центрирования
-  },
-  Spinach: {
-    position: "absolute",
-    top: "100%", // Центрирование по вертикали
-    left: -20, // Левый край экрана
-    width: 70,
-    height: 70,
-// Смещение вверх на половину высоты для точного центрирования
+    fontWeight: "bold",
   },
 });
