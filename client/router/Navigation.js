@@ -7,6 +7,8 @@ import WelcomeScreen from "../screens/Main"; // Приветственный э�
 import LoginScreen from "../screens/LoginScreen"; // Экран входа
 import HomeScreen from "../screens/HomeScreen"; // Главная страница после входа
 import SignUpScreen from "../screens/SignUp"; // Экран регистрации
+import FoodDetailScreen from "../screens/FoodDetailScreen"; // Экран деталей блюда
+
 
 const Stack = createStackNavigator();
 export default function AppNavigator() {
@@ -36,6 +38,12 @@ export default function AppNavigator() {
           name="SignUp"
           component={SignUpScreen}
           options={{ title: "Регистрация" }}
+        />
+        {/* Пятый экран: Детали блюда */}
+        <Stack.Screen
+          name="FoodDetail"
+          component={FoodDetailScreen}
+          options={{ title: "Детали блюда" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

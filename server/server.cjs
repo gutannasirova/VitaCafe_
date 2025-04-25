@@ -1,9 +1,10 @@
-import express from "express";
-import cors from "cors";
-import bcrypt from "bcryptjs";
-import pg from "pg";
-const { Pool } = pg;
+const express = require("express");
+const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const pg = require("pg");
+const path = require('path');
 
+const { Pool } = pg;
 const app = express();
 const port = 3000;
 
@@ -22,8 +23,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
 // ==================== Маршрут для регистрации ====================
 app.post("/register", async (req, res) => {
+  console.log("fjkdf");
   const { username, email, password } = req.body;
 
   try {

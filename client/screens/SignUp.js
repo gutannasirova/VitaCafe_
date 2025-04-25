@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 
 // Замените на реальный URL вашего сервера
-const API_BASE_URL = 'http://localhost:8081';
+const API_BASE_URL = 'http://localhost:3000';
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -18,6 +18,7 @@ export default function SignUpScreen({ navigation }) {
 
   // Функция для регистрации пользователя
   const handleSignUp = async () => {
+    // console.log("123")
     // Проверка ввода данных
     if (!name.trim()) {
       Alert.alert("Ошибка", "Введите ФИО");
@@ -32,9 +33,9 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
 
-    setIsLoading(true); // Включаем индикатор загрузки
-
-    try {
+    // setIsLoading(true); // Включаем индикатор загрузки
+    console.log("123465")
+    // try {
       console.log("Отправляем запрос на:", `${API_BASE_URL}/register`);
       console.log("Данные для регистрации:", { username: name, email, password });
 
@@ -56,12 +57,13 @@ export default function SignUpScreen({ navigation }) {
       const data = await response.json();
       Alert.alert("Успех", "Вы успешно зарегистрировались");
       navigation.navigate("LoginScreen");
-    } catch (error) {
-      console.error("Ошибка при регистрации:", error);
-      Alert.alert("Ошибка", "Не удалось подключиться к серверу. Проверьте подключение к интернету.");
-    } finally {
-      setIsLoading(false); // Выключаем индикатор загрузки
-    }
+
+    // } catch (error) {
+    //   console.error("Ошибка при регистрации:", error);
+    //   Alert.alert("Ошибка", "Не удалось подключиться к серверу. Проверьте подключение к интернету.");
+    // } finally {
+    //   setIsLoading(false); // Выключаем индикатор загрузки
+    // }
   };
 
   return (

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from "react-native";
 
-
-const FoodDetailScreen = () => {
+const FoodDetailScreen = ({ route }) => {
+  const { item } = route.params; // Получаем данные о блюде
   const [quantity, setQuantity] = useState(1); // Состояние для количества
 
   const handleIncrease = () => {

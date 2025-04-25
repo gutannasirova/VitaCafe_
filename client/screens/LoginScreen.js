@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-const API_BASE_URL = 'http://localhost:8081';
+const API_BASE_URL = 'http://localhost:3000';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState(""); // Поле для ввода email
