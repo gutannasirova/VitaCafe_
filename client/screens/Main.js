@@ -12,7 +12,9 @@ const WelcomeScreen = ({ navigation }) => {
         >
           <Text style={styles.buttonText}>Войти</Text>
         </TouchableOpacity>
-        <Text style={styles.registerText}>Регистрация</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.registerText}>Регистрация</Text>
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );

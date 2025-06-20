@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, FlatList, ImageBackground, StyleSheet } from "react-native";
-const API_BASE_URL = 'http://localhost:3000';
 
 const foodItems = [
     { id: "1", title: "Салат с бурратой", calories: "120 ккал", price: "380 ₽", image: require("./assets/food_image2.png") },
@@ -17,14 +16,9 @@ const popularItems = [
 export default function HomeScreen({ navigation }) {
     return (
         <ImageBackground source={require("./assets/fon.png")} style={styles.background}>
-            {/* Верхняя панель */}
+            {/* Обновлённый хедер */}
             <View style={styles.header}>
-                <View style={styles.logoContainer}>
-                    <Text style={styles.logo}>VitaCafe</Text>
-                </View>
-                <TouchableOpacity>
-                    <Image source={require("./assets/delivery1.png")} style={styles.icon} />
-                </TouchableOpacity>
+                <Text style={styles.logo}>VitaCafe</Text>
             </View>
 
             {/* Специальное предложение */}
@@ -34,7 +28,7 @@ export default function HomeScreen({ navigation }) {
                 <Image source={require("./assets/food_image1.png")} style={styles.offerImage} />
             </View>
 
-           {/* Популярные блюда */}
+            {/* Популярное */}
             <Text style={styles.sectionTitle}>Популярное</Text>
             <FlatList
                 data={popularItems}
@@ -56,7 +50,7 @@ export default function HomeScreen({ navigation }) {
     );
 }
 
-// Стили
+// Новый стиль
 const styles = StyleSheet.create({
     background: {
         flex: 1,
@@ -64,29 +58,24 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center",
-        margin: 20,
-    },
-    icon: {
-        width: 30,
-        height: 30,
-        left:8,
-    },
-    logoContainer: {
-        right:9,
+        marginHorizontal: 20,
+        marginTop: 30,
+        marginBottom: 10,
     },
     logo: {
-        fontSize: 33,
-        fontFamily: "faberge",
+        fontSize: 32, // Увеличенный размер текста
+        fontWeight: "bold",
+        fontFamily: "serif",
+        color: "#000",
     },
     specialOffer: {
         backgroundColor: "#76b82a",
         borderRadius: 20,
         padding: 35,
         marginTop: 20,
-        left:10,
-        width:350,
+        left: 10,
+        width: 350,
         position: "relative",
         marginBottom: 30,
         shadowColor: "#000",
@@ -126,7 +115,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         alignItems: "center",
         padding: 10,
-        paddingLeft:8,
+        paddingLeft: 8,
         shadowColor: "#000",
         shadowOpacity: 0.3,
         shadowOffset: { width: 4, height: 6 },
@@ -138,7 +127,7 @@ const styles = StyleSheet.create({
         height: 160,
         resizeMode: "cover",
         left: 30,
-        bottom: 10
+        bottom: 10,
     },
     popularTitle: {
         fontSize: 18,

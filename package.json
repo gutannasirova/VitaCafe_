@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@react-native-community/datetimepicker": "^8.2.0",
-    "@react-native-community/slider": "^4.5.5"
+    "@react-native-community/slider": "^4.5.5",
+    "@react-navigation/native-stack": "^7.3.10"
   }
 }

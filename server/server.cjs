@@ -1,33 +1,32 @@
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-const pg = require("pg");
-const path = require('path');
+const { Pool } = require("pg");
+const path = require("path");
 
-const { Pool } = pg;
 const app = express();
 const port = 3000;
 
 // Настройка подключения к PostgreSQL
 const pool = new Pool({
-  user: "postgres", // Замените на имя пользователя PostgreSQL
+  user: "postgres",
   host: "localhost",
-  database: "VitaCafe", // Замените на имя вашей базы данных
-  password: "guti777", // Замените на пароль
+  database: "VitaCafe",
+  password: "guti777",
   port: 5432,
 });
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:8081', // Разрешаем запросы только с этого адреса
-}));
+app.use(
+  cors({
+    origin: "http://localhost:8081", // Разрешаем запросы только с этого адреса
+  })
+);
 app.use(express.json());
-
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // ==================== Маршрут для регистрации ====================
 app.post("/register", async (req, res) => {
-  console.log("fjkdf");
   const { username, email, password } = req.body;
 
   try {
@@ -43,10 +42,11 @@ app.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Создаем нового пользователя
-    await pool.query(
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
-      [username, email, hashedPassword]
-    );
+    await pool.query("INSERT INTO users (username, email, password) VALUES ($1, $2, $3)", [
+      username,
+      email,
+      hashedPassword,
+    ]);
 
     res.status(201).json({ message: "Пользователь успешно зарегистрирован" });
   } catch (error) {
@@ -101,6 +101,50 @@ app.get("/menu_items", async (req, res) => {
   }
 });
 
+// ==================== Маршрут для добавления товара в корзину ====================
+app.post("/cart", async (req, res) => {
+  const { id, title, calories, price, quantity, image } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO cart_items (id, title, calories, price, quantity, image) VALUES ($1, $2, $3, $4, $5, $6)",
+      [id, title, calories, price, quantity, image]
+    );
+    res.status(201).json({ message: "Товар добавлен в корзину" });
+  } catch (error) {
+    console.error("Ошибка при добавлении товара:", error.message);
+    res.status(500).json({ error: "Ошибка при добавлении товара" });
+  }
+});
+
+// ==================== Маршрут для получения адресов пользователя ====================
+app.post('/addAddress', async (req, res) => {
+  const { user_id, city, street } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO addresses (user_id, city, street) VALUES ($1, $2, $3) RETURNING *",
+      [user_id, city, street]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Ошибка добавления адреса:", error.message);
+    res.status(500).json({ error: "Ошибка добавления адреса" });
+  }
+});
+
+app.get("/getUserAddresses", async (req, res) => {
+  const userId = req.query.user_id;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM addresses WHERE user_id = $1",
+      [userId]
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Ошибка при получении адресов:", error.message);
+    res.status(500).json({ error: "Не удалось загрузить адреса" });
+  }
+});
 // ==================== Запуск сервера ====================
 app.listen(port, () => {
   console.log(`Сервер запущен на http://localhost:${port}`);

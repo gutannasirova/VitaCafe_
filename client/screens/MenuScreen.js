@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import {
   View,
   Text,
@@ -14,15 +14,18 @@ import {
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { useQuery } from "@tanstack/react-query";
+import { CartContext } from "../router/CartContext";
 
+// Карта изображений
 const imageMap = {
   "food1.png": require("./assets/food_image1.png"),
   "food2.png": require("./assets/food_image2.png"),
 };
 
+// Базовый URL для запросов к API
 const API_BASE_URL = 'http://localhost:3000';
 
-// Функции для получения данных через react-query
+// Функции для получения данных
 const fetchCategories = async () => {
   const res = await fetch(`${API_BASE_URL}/categories`);
   if (!res.ok) throw new Error("Ошибка при загрузке категорий");
@@ -36,6 +39,9 @@ const fetchMenuItems = async () => {
 };
 
 const MenuScreen = () => {
+  const { addToCart } = useContext(CartContext);
+
+  // Состояния
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [filteredData, setFilteredData] = useState([]);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -44,26 +50,20 @@ const MenuScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const modalAnimation = useRef(new Animated.Value(0)).current;
 
-  // Используем useQuery для получения данных (обновленный формат)
+  // Получение данных через react-query
   const {
     data: categories = [],
     isLoading: isCategoriesLoading,
     error: categoriesError,
-  } = useQuery({
-    queryKey: ["categories"],
-    queryFn: fetchCategories,
-  });
+  } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
 
   const {
     data: menuItems = [],
     isLoading: isMenuItemsLoading,
     error: menuItemsError,
-  } = useQuery({
-    queryKey: ["menuItems"],
-    queryFn: fetchMenuItems,
-  });
+  } = useQuery({ queryKey: ["menuItems"], queryFn: fetchMenuItems });
 
-  // Устанавливаем начальную категорию и фильтруем данные
+  // Установка начальной категории
   React.useEffect(() => {
     if (categories.length > 0 && menuItems.length > 0) {
       const defaultCategoryId = categories[0]?.id;
@@ -72,6 +72,7 @@ const MenuScreen = () => {
     }
   }, [categories, menuItems]);
 
+  // Открытие фильтров
   const openFilter = () => {
     setIsFilterVisible(true);
     Animated.timing(modalAnimation, {
@@ -81,6 +82,7 @@ const MenuScreen = () => {
     }).start();
   };
 
+  // Закрытие фильтров
   const closeFilter = () => {
     Animated.timing(modalAnimation, {
       toValue: 0,
@@ -89,6 +91,7 @@ const MenuScreen = () => {
     }).start(() => setIsFilterVisible(false));
   };
 
+  // Применить фильтры
   const applyFilters = () => {
     const filtered = menuItems.filter(
       (item) =>
@@ -102,20 +105,31 @@ const MenuScreen = () => {
     closeFilter();
   };
 
+  // Обработка поиска
   const handleSearch = (query) => {
     setSearchQuery(query);
-    if (query === "") {
+
+    if (query.trim() === "") {
       setFilteredData(menuItems.filter((item) => item.category_id === selectedCategory));
       return;
     }
+
     const found = menuItems.filter(
       (item) =>
         item.title.toLowerCase().includes(query.toLowerCase()) &&
         item.category_id === selectedCategory
     );
+
     setFilteredData(found);
   };
 
+  // Выбор категории
+  const selectCategory = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setFilteredData(menuItems.filter((item) => item.category_id === categoryId));
+  };
+
+  // Анимация модального окна
   const modalTranslateY = modalAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [500, 0],
@@ -124,15 +138,12 @@ const MenuScreen = () => {
   return (
     <ImageBackground source={require("./assets/fon.png")} style={styles.background}>
       <View style={styles.container}>
+        {/* Хедер */}
         <View style={styles.header}>
-          <TouchableOpacity>
-            <Feather name="menu" size={28} color="black" />
-          </TouchableOpacity>
           <Text style={styles.logo}>VitaCafe</Text>
-          <TouchableOpacity>
-            <Feather name="search" size={28} color="black" />
-          </TouchableOpacity>
         </View>
+
+        {/* Поиск */}
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
@@ -142,12 +153,13 @@ const MenuScreen = () => {
             onChangeText={handleSearch}
           />
         </View>
+
+        {/* Категории */}
         <View style={styles.categoryContainer}>
           <Text style={styles.categoryTitle}>Категории</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAll}>Смотреть все</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Фильтры + Категории */}
         <View style={styles.filterContainer}>
           <TouchableOpacity style={styles.filterButton} onPress={openFilter}>
             <Feather name="sliders" size={22} color="black" />
@@ -159,11 +171,7 @@ const MenuScreen = () => {
                 styles.categoryButton,
                 selectedCategory === cat.id && styles.categoryButtonActive,
               ]}
-              onPress={() => {
-                setSelectedCategory(cat.id);
-                setSearchQuery("");
-                setFilteredData(menuItems.filter((item) => item.category_id === cat.id));
-              }}
+              onPress={() => selectCategory(cat.id)}
             >
               <Text
                 style={
@@ -177,6 +185,8 @@ const MenuScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Список блюд */}
         <FlatList
           data={filteredData}
           keyExtractor={(item) => item.id.toString()}
@@ -192,22 +202,32 @@ const MenuScreen = () => {
               <Text style={styles.foodTitle}>{item.title}</Text>
               <Text style={styles.foodCalories}>{item.calories} ккал</Text>
               <Text style={styles.foodPrice}>{item.price}р</Text>
-              <TouchableOpacity style={styles.addToCart}>
+              <TouchableOpacity
+                style={styles.addToCart}
+                onPress={() => {
+                  addToCart({
+                    ...item,
+                    image: imageMap[item.image_url] || require("./assets/food_image2.png"),
+                  });
+                }}
+              >
                 <Feather name="shopping-cart" size={18} color="black" />
               </TouchableOpacity>
             </View>
           )}
         />
-        <Modal visible={isFilterVisible} transparent={true} animationType="none" onRequestClose={closeFilter}>
+
+        {/* Модальное окно фильтров */}
+        <Modal visible={isFilterVisible} transparent animationType="none" onRequestClose={closeFilter}>
           <View style={styles.modalOverlay}>
             <Animated.View style={[styles.modalContainer, { transform: [{ translateY: modalTranslateY }] }]}>
               <Text style={styles.modalTitle}>Фильтры</Text>
+              {/* Калории */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterLabel}>Калорийность</Text>
                 <View style={styles.sliderContainer}>
-                  <Text>{caloriesRange[0]}</Text>
+                  <Text>{Math.round(caloriesRange[0])}</Text>
                   <Slider
-                    style={{ width: "80%", height: 40 }}
                     minimumValue={100}
                     maximumValue={3000}
                     step={50}
@@ -216,15 +236,15 @@ const MenuScreen = () => {
                     minimumTrackTintColor="#76b82a"
                     maximumTrackTintColor="#ccc"
                   />
-                  <Text>{caloriesRange[1]}</Text>
+                  <Text>{Math.round(caloriesRange[1])}</Text>
                 </View>
               </View>
+              {/* Цена */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterLabel}>Стоимость</Text>
                 <View style={styles.sliderContainer}>
-                  <Text>{priceRange[0]}</Text>
+                  <Text>{Math.round(priceRange[0])}</Text>
                   <Slider
-                    style={{ width: "80%", height: 40 }}
                     minimumValue={200}
                     maximumValue={3000}
                     step={100}
@@ -233,9 +253,10 @@ const MenuScreen = () => {
                     minimumTrackTintColor="#76b82a"
                     maximumTrackTintColor="#ccc"
                   />
-                  <Text>{priceRange[1]}</Text>
+                  <Text>{Math.round(priceRange[1])}</Text>
                 </View>
               </View>
+              {/* Применить */}
               <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
                 <Text style={styles.applyButtonText}>Применить</Text>
               </TouchableOpacity>
@@ -246,6 +267,7 @@ const MenuScreen = () => {
     </ImageBackground>
   );
 };
+
 
 const styles = StyleSheet.create({
   background: {
@@ -258,40 +280,39 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    marginLeft: 20,
+    marginTop: 30,
     marginBottom: 20,
   },
   logo: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     fontFamily: "serif",
+    color: "#000",
   },
   searchContainer: {
     backgroundColor: "#fff",
     borderRadius: 25,
     paddingHorizontal: 20,
     paddingVertical: 10,
+    marginHorizontal: 20,
     marginBottom: 20,
   },
   searchInput: {
     fontSize: 16,
   },
   categoryContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    marginLeft: 20,
     marginVertical: 15,
   },
   categoryTitle: {
     fontSize: 24,
     fontWeight: "bold",
   },
-  viewAll: {
-    fontSize: 16,
-    color: "#76b82a",
-  },
   filterContainer: {
     flexDirection: "row",
+    marginLeft: 20,
     marginBottom: 10,
     alignItems: "center",
   },
@@ -303,8 +324,8 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     backgroundColor: "#76b82a",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 6,
     borderRadius: 10,
     marginRight: 10,
   },
@@ -384,6 +405,7 @@ const styles = StyleSheet.create({
   sliderContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   applyButton: {
     backgroundColor: "#76b82a",
@@ -397,5 +419,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
 export default MenuScreen;

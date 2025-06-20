@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { CommonActions } from '@react-navigation/native'; 
+
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -29,7 +31,13 @@ export default function LoginScreen({ navigation }) {
       // Обработка ответа от сервера
       if (response.ok) {
         Alert.alert("Успех", "Вы успешно вошли");
-        navigation.navigate("Home"); // Переход на главную страницу
+        // ❗ ПРАВИЛЬНЫЙ переход на "Main" (удаляем историю навигации)
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          })
+        );
       } else {
         Alert.alert("Ошибка", data.error || "Неправильные данные");
       }

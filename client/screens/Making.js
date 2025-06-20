@@ -1,16 +1,28 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ImageBackground,
+  StyleSheet,
+  Animated
+} from "react-native";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { useNavigation } from "@react-navigation/native";
 
-export default function OrderScreen() {
+export default function OrderScreen({ route }) {
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [promoCode, setPromoCode] = useState("");
   const [leaveAtDoor, setLeaveAtDoor] = useState(false);
-  const [showOptions, setShowOptions] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState("В ближайший час");
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState("card");
+  const [selectedAddress, setSelectedAddress] = useState(
+    route.params?.selectedAddress || {
+      city: "Москва",
+      street: "ул Нежинская, д. 14"
+    }
+  );
+
+  const totalPrice = route.params?.totalPrice ?? 0;
+  const navigation = useNavigation();
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -20,13 +32,15 @@ export default function OrderScreen() {
     }).start();
   }, []);
 
-  const toggleOptions = () => setShowOptions(!showOptions);
-
-
-  
   return (
     <ImageBackground source={require("./assets/fon.png")} style={styles.background}>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+
+        {/* Кнопка "Назад" */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <AntDesign name="arrowleft" size={24} color="black" />
+        </TouchableOpacity>
+
         <Text style={styles.header}>Оформление заказа</Text>
 
         {/* Адрес */}
@@ -34,46 +48,40 @@ export default function OrderScreen() {
           <FontAwesome5 name="map-marker-alt" size={18} color="black" />
           <Text style={styles.sectionTitle}>Адрес</Text>
         </View>
-        <TouchableOpacity style={styles.inputRow}>
-          <Text style={styles.inputText}>Москва, ул Нежинская, дом 14</Text>
+        <TouchableOpacity
+          style={styles.inputRow}
+          onPress={() => navigation.navigate("Addresses")}
+        >
+          <Text style={styles.inputText}>
+            {selectedAddress.city}, {selectedAddress.street}
+          </Text>
           <AntDesign name="right" size={18} color="black" />
         </TouchableOpacity>
-
-
 
         {/* Способ оплаты */}
         <View style={styles.section}>
           <FontAwesome5 name="credit-card" size={18} color="black" />
           <Text style={styles.sectionTitle}>Способ оплаты</Text>
         </View>
-        <TouchableOpacity style={styles.inputRow}>
-          <Text style={styles.inputText}>Оплата картой ***4433</Text>
-          <AntDesign name="right" size={18} color="black" />
-        </TouchableOpacity>
+        <View style={styles.paymentOptions}>
+          <TouchableOpacity
+            style={styles.paymentOption}
+            onPress={() => setSelectedPayment("card")}
+          >
+            <Text style={styles.inputText}>Картой курьеру</Text>
+            <View style={selectedPayment === "card" ? styles.radioSelected : styles.radio} />
+          </TouchableOpacity>
 
-        {/* Бонусы */}
-        <View style={styles.section}>
-          <FontAwesome5 name="gift" size={18} color="black" />
-          <Text style={styles.sectionTitle}>Бонусы</Text>
-        </View>
-        <View style={styles.row}>
-          <TextInput
-            style={styles.bonusInput}
-            placeholder="Количество бонусов"
-            value={promoCode}
-            onChangeText={setPromoCode}
-            placeholderTextColor="#6A6A6A"
-          />
-          <TouchableOpacity style={styles.applyButton}>
-            <Text style={styles.applyButtonText}>Списать</Text>
+          <TouchableOpacity
+            style={styles.paymentOption}
+            onPress={() => setSelectedPayment("cash")}
+          >
+            <Text style={styles.inputText}>Наличными</Text>
+            <View style={selectedPayment === "cash" ? styles.radioSelected : styles.radio} />
           </TouchableOpacity>
         </View>
 
-        {/* Оставить у двери */}
-        <TouchableOpacity style={styles.leaveAtDoor} onPress={() => setLeaveAtDoor(!leaveAtDoor)}>
-          <Text style={styles.leaveText}>Оставить у двери</Text>
-          <View style={leaveAtDoor ? styles.radioSelected : styles.radio} />
-        </TouchableOpacity>
+        
 
         {/* Итог */}
         <View style={styles.summary}>
@@ -81,18 +89,22 @@ export default function OrderScreen() {
         </View>
         <View style={styles.total}>
           <Text style={styles.totalText}>Итог</Text>
-          <Text style={styles.totalPrice}>1288р</Text>
+          <Text style={styles.totalPrice}>{totalPrice}р</Text>
         </View>
 
         {/* Кнопка Заказать */}
-        <TouchableOpacity style={styles.orderButton}>
+        <TouchableOpacity
+          style={styles.orderButton}
+          onPress={() => navigation.navigate("OrderConfirmation")}
+        >
           <Text style={styles.orderText}>Заказать</Text>
         </TouchableOpacity>
       </Animated.View>
     </ImageBackground>
   );
 }
-const styles = StyleSheet.create({ 
+
+const styles = StyleSheet.create({
   background: {
     flex: 1,
     resizeMode: "cover",
@@ -100,8 +112,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    width: 412, // ширина теперь адаптивная
-    height: 'auto', // высота адаптируется под содержимое
+    width: 412,
+    height: 'auto',
     padding: 10,
   },
   backButton: {
@@ -111,11 +123,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   header: {
-    fontSize: 26,
-    paddingTop: 0,
-    paddingBottom: 20,
-    fontFamily: 'faberge',
-  },
+  fontSize: 26,
+  paddingTop: 0,
+  paddingBottom: 20,
+  fontFamily: 'faberge',
+  marginTop: 60,   // Добавил отступ сверху
+  textAlign: 'left', // Чтобы заголовок был по центру
+},
+
   section: {
     flexDirection: "row",
     alignItems: "center",
@@ -138,61 +153,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "faberge",
   },
-  dropdown: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderRadius: 15,
-    padding: 10,
-    marginTop: 5,
-  },
-  optionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-  },
-  optionText: {
-    fontSize: 16,
-    fontFamily: "faberge",
-  },
-  selectedOption: {
-    backgroundColor: "#7bc100",
-    borderRadius: 10,
-    padding: 10,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  paymentOptions: {
     marginTop: 10,
   },
-  bonusInput: {
+  paymentOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     padding: 15,
-    width: 392, // теперь занимает 85% доступной ширины
     borderRadius: 20,
-    marginRight: 10,
-    fontFamily: 'faberge',
-    position: 'absolute',
-    zIndex: 1,
-  },
-  applyButton: {
-    backgroundColor: "#6B9D19",
-    padding: 14.5,
-    borderRadius: 20,
-    alignItems: "center",
-    marginLeft: 'auto', // позиционируем кнопку вправо
-    marginRight: 0,
-    width: 100, // фиксированная ширина кнопки
-    zIndex: 2,
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#78B420",
-  },
-  applyButtonText: {
-    color: "#000000",
-    fontSize: 14,
-    fontFamily: 'faberge',
+    marginTop: 10,
   },
   leaveAtDoor: {
     flexDirection: "row",
@@ -236,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     paddingTop: 15,
     height: 90,
-    width:392,
+    width: 392,
     paddingHorizontal: 100,
     borderRadius: 20,
     borderWidth: 2,
@@ -256,14 +227,14 @@ const styles = StyleSheet.create({
   },
   orderButton: {
     backgroundColor: "#78B420",
-    paddingVertical: 10, 
+    paddingVertical: 10,
     paddingHorizontal: 102.5,
     borderRadius: 20,
     alignItems: "center",
     position: 'absolute',
     zIndex: 2,
     top: 490,
-    width:392,
+    width: 392,
   },
   orderText: {
     color: "white",
@@ -271,4 +242,3 @@ const styles = StyleSheet.create({
     fontFamily: 'faberge',
   },
 });
-

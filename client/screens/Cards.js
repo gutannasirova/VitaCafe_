@@ -1,227 +1,278 @@
-import React, { useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Animated } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-export default function CardsScreen() {
-  const [selectedCard, setSelectedCard] = useState("Visa **3434");
-  const [newCard, setNewCard] = useState({ number: "", exp: "", cvv: "" });
-  const [showForm, setShowForm] = useState(false);
-  const [cards, setCards] = useState(["Visa **3434", "MasterCard **3434"]);
+const API_URL = "http://localhost:3000"; // Замени на свой IP, если тестирование по Wi-Fi
 
-  // Анимация вращения
-  const spinValue = useRef(new Animated.Value(0)).current;
+export default function Cards({ route }) {
+  const navigation = useNavigation();
+  const { token, userId } = route.params || {};
+
+useEffect(() => {
+  if (!token) {
+    Alert.alert("Ошибка", "Необходимо войти");
+    return;
+  }
+  fetchCards();
+}, [token]);
+
+  const [cards, setCards] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [loading, setLoading] = useState(true);
+  const [cardNumber, setCardNumber] = useState("");
+  const [exp, setExp] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 4000, // Вращение на 180 градусов за 4 секунды
-          useNativeDriver: true,
-        }),
-        Animated.timing(spinValue, {
-          toValue: 0,
-          duration: 4000, // Возвращение обратно за 4 секунды
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    fetchCards();
   }, []);
 
-  // Интерполяция для вращения
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "-50deg"],
-  });
+  const fetchCards = () => {
+    setLoading(true);
+    fetch(`${API_URL}/getUserCards`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    
+      .then((res) => res.json())
+      .then((data) => {
+        setCards(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Ошибка загрузки карт:", err);
+        setLoading(false);
+      });
+  };
+  console.log("Токен:", token); // должен быть строкой вида "eyJhbGciOiJIUzI1NiIs..."
 
-  const handleAddCard = () => {
-    const cardNumber = newCard.number.slice(-4); // Получаем последние 4 цифры номера карты
-    const newCardLabel = `Карта **${cardNumber}`; // Форматируем номер карты
-    setCards([...cards, newCardLabel]); // Добавляем новую карту в список
-    setNewCard({ number: "", exp: "", cvv: "" }); // Сбрасываем форму
-    setShowForm(false); // Скрываем форму
+  const handleSelectCard = (index) => {
+    setSelectedIndex(index);
   };
 
+  const validateExp = (exp) => {
+    return /^\d{2}\/\d{2}$/.test(exp);
+  };
 
+  const handleSaveCard = () => {
+    if (!cardNumber.trim() || !exp.trim() || !cvv.trim()) {
+      Alert.alert("Ошибка", "Введите номер карты, срок действия и CVV");
+      return;
+    }
+
+    if (!/^\d{16}$/.test(cardNumber)) {
+      Alert.alert("Ошибка", "Неверный формат номера карты");
+      return;
+    }
+
+    if (!validateExp(exp)) {
+      Alert.alert("Ошибка", "Формат срока действия должен быть MM/YY");
+      return;
+    }
+
+    if (!/^\d{3,4}$/.test(cvv)) {
+      Alert.alert("Ошибка", "Неверный формат CVV");
+      return;
+    }
+
+    setSaving(true);
+    fetch(`${API_URL}/addCard`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        number: cardNumber,
+        exp,
+        cvv,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "Ошибка сервера");
+        }
+        return res.json();
+      })
+      .then((newCard) => {
+        setCards([newCard, ...cards]);
+        setSelectedIndex(0);
+        setCardNumber("");
+        setExp("");
+        setCvv("");
+      })
+      .catch((err) => {
+        console.error("Ошибка при сохранении карты:", err);
+        Alert.alert("Ошибка", "Не удалось сохранить карту");
+      })
+      .finally(() => setSaving(false));
+  };
+
+  const handleProceed = () => {
+    if (selectedIndex === -1) {
+      Alert.alert("Ошибка", "Пожалуйста, выберите карту");
+      return;
+    }
+    navigation.navigate("Order", {
+      selectedCard: cards[selectedIndex],
+    });
+  };
 
   return (
-    <ImageBackground source={require('./assets/fon.png')} style={styles.background}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Мои карты</Text>
+    <View style={styles.container}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+      >
+        <AntDesign name="arrowleft" size={24} color="#000" />
+      </TouchableOpacity>
 
-        {/* Список карт */}
-        {cards.map((card, index) => (
-          <TouchableOpacity key={index} style={styles.cardItem} onPress={() => setSelectedCard(card)}>
-            <Text style={styles.cardText}>{card}</Text>
-            <View style={selectedCard === card ? styles.radioSelected : styles.radio} />
+      <Text style={styles.title}>Выберите способ оплаты</Text>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#78B420" />
+      ) : (
+        <>
+          <ScrollView style={styles.cardList}>
+            {cards.map((card, index) => (
+              <TouchableOpacity
+                key={card.id || index}
+                style={styles.cardItem}
+                onPress={() => handleSelectCard(index)}
+              >
+                <Text style={styles.cardText}>
+                  **** **** **** {card.number.slice(-4)} ({card.exp})
+                </Text>
+                <View style={styles.radioOuter}>
+                  {selectedIndex === index && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <Text style={[styles.title, { fontSize: 22 }]}>Добавить карту</Text>
+
+          <TextInput
+            placeholder="Номер карты"
+            value={cardNumber}
+            onChangeText={setCardNumber}
+            style={styles.input}
+            keyboardType="numeric"
+            maxLength={16}
+          />
+          <TextInput
+            placeholder="Срок действия (MM/YY)"
+            value={exp}
+            onChangeText={setExp}
+            style={styles.input}
+            maxLength={5}
+          />
+          <TextInput
+            placeholder="CVV"
+            value={cvv}
+            onChangeText={setCvv}
+            style={styles.input}
+            keyboardType="numeric"
+            secureTextEntry
+            maxLength={4}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, saving && { backgroundColor: "#999" }]}
+            onPress={handleSaveCard}
+            disabled={saving}
+          >
+            <Text style={styles.buttonText}>
+              {saving ? "Сохраняем..." : "Сохранить карту"}
+            </Text>
           </TouchableOpacity>
-        ))}
 
-        {/* Кнопка "Добавить карту" */}
-        <TouchableOpacity
-          style={styles.addCardButton}
-          onPress={() => setShowForm(!showForm)}
-        >
-          <AntDesign name="pluscircleo" size={18} color="#4CAF50" style={styles.addCardIcon} />
-          <Text style={styles.addCardText}>Добавить карту</Text>
-        </TouchableOpacity>
-
-        {/* Форма добавления карты */}
-        {showForm && (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Номер карты"
-              keyboardType="numeric"
-              value={newCard.number}
-              onChangeText={(text) => setNewCard({ ...newCard, number: text })}
-            />
-            <View style={styles.row}>
-              <TextInput
-                style={styles.inputSmall}
-                placeholder="мм/гг"
-                keyboardType="numeric"
-                value={newCard.exp}
-                onChangeText={(text) => setNewCard({ ...newCard, exp: text })}
-              />
-              <TextInput
-                style={styles.inputSmall}
-                placeholder="cvv"
-                keyboardType="numeric"
-                value={newCard.cvv}
-                onChangeText={(text) => setNewCard({ ...newCard, cvv: text })}
-              />
-            </View>
-
-            {/* Кнопка Подтвердить */}
-            <TouchableOpacity style={styles.confirmButton} onPress={handleAddCard}>
-              <Text style={styles.confirmText}>Подтвердить</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* Анимированные изображения */}
-        <Animated.Image
-          source={require('./assets/Bazelik.png')}
-          style={[styles.Bazelik, { transform: [{ rotate: spin }] }]}
-        />
-        <Animated.Image
-          source={require('./assets/Spinach2.png')}
-          style={[styles.Spinach, { transform: [{ rotate: spin }] }]}
-        />
-      </View>
-    </ImageBackground>
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 10 }]}
+            onPress={handleProceed}
+          >
+            <Text style={styles.buttonText}>Выбрать карту и продолжить</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-    background: {
-      flex: 1,
-      width: 412, // Изменено с 311 на 412
-      height: 'auto',
-      justifyContent: 'center',
-    },
-    container: {
-      width: 412, // Изменено с 311 на 412
-      height: 'auto',
-      alignSelf: 'center',
-      flexGrow: 1,
-      padding: 20,
-    },
-    header: {
-      fontSize: 26,
-      paddingBottom: 20,
-      fontFamily: 'faberge',
-    },
-    cardItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 10,
-    },
-    cardText: {
-      fontSize: 16,
-      fontFamily: 'faberge',
-      fontWeight: 'normal',
-    },
-    radio: {
-      width: 18,
-      height: 18,
-      borderRadius: 10,
-      borderWidth: 2,
-      borderColor: '#4CAF50',
-    },
-    radioSelected: {
-      width: 18,
-      height: 18,
-      borderRadius: 10,
-      borderWidth: 2,
-      borderColor: '#4CAF50',
-      backgroundColor: '#4CAF50',
-    },
-    addCardButton: {
-      flexDirection: 'row',
-      backgroundColor: 'rgba(236, 244, 230, 0.9)',
-      padding: 15,
-      borderRadius: 20,
-      marginTop: 20,
-      height: 50,
-    },
-    addCardText: {
-      fontSize: 16,
-      marginLeft: 10,
-      fontFamily: 'faberge',
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    addCardIcon: {
-      marginLeft: 94, // Пропорционально увеличено с 48
-    },
-    input: {
-      backgroundColor: 'rgba(236, 244, 230, 0.9)',
-      padding: 15,
-      borderRadius: 20,
-      marginTop: 15,
-      fontFamily: 'faberge',
-    },
-    row: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 15,
-    },
-    inputSmall: {
-      backgroundColor: 'rgba(236, 244, 230, 0.9)',
-      padding: 15,
-      borderRadius: 20,
-      width: '48%',
-      fontFamily: 'faberge',
-    },
-    confirmButton: {
-      backgroundColor: "#78B420",
-      paddingVertical: 10,
-      paddingHorizontal: 140, // Пропорционально увеличено с 110
-      borderRadius: 20,
-      marginTop: 30,
-      alignItems: "center",
-    },
-    confirmText: {
-      color: 'white',
-      fontSize: 18,
-      fontFamily: 'faberge',
-      fontWeight: 'normal',
-    },
-    Bazelik: {
-      position: "absolute",
-      top: 500,
-      left: 340, // Пропорционально изменено с 240
-      width: 100,
-      height: 100,
-    },
-    Spinach: {
-      position: "absolute",
-      top: 30,
-      right: 380, // Пропорционально изменено с 280
-      width: 60,
-      height: 60,
-    },
-  });
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  backButton: {
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  cardList: {
+    maxHeight: 200,
+    marginBottom: 20,
+  },
+  cardItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  cardText: {
+    fontSize: 16,
+  },
+  radioOuter: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#78B420",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  radioInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: "#78B420",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  button: {
+    backgroundColor: "#78B420",
+    padding: 15,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+});
